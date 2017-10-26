@@ -20,6 +20,14 @@ def routine():
 
 	return
 
+#input : string (* not byte)
+#output : hash string without 0x
+def hash(string_):
+	msg = string_.encode()
+	m = hashlib.sha512()
+	m.update(msg)
+	hashed_msg = hex(int.from_bytes(m.digest(),byteorder='big'))[2:]
+	return hashed_msg
 #input : int
 #output : (hex,hex) , (hex,hex)
 #             pk    ,     sk
@@ -130,7 +138,33 @@ def read_payload_json(filename):
 	pk = e,N
 	
 	return pk,msg,sig
+def mk_sign(transaction):
+	
+	sign_structure = {
+		"type": "transaction_sign",
+		"transaction" : JSON.stringify(transaction),
+		"sign" : sign(transaction['from'],hash(JSON.stringfy(transaction)))
+	};
 
+	return sign_structure
+
+def make_block(transactions,reward,difficulty,nonce,parent):
+	time = None
+	block = {
+		"type":"block",
+		"transactions":[transactions],
+		"timestamp":time,
+		"nonce" : nonce,
+		"parent" : parent };
+	
+	return block
+def make_block_hash(block):
+	blcok_hash = {
+	"type" : "block_hash",
+	"block": JSON.stringify(block),
+	"hash" : hash(JSON.stringify(block))
+	};
+	return block_hash
 ################
 #   for test   #
 ################
