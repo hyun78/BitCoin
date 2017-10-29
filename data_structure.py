@@ -1,4 +1,4 @@
-import Crypto
+import Crypto	
 from Crypto.PublicKey import RSA
 from Crypto import Random
 import hashlib
@@ -6,6 +6,10 @@ import json
 from collections import OrderedDict
 from digital_signature import *
 
+import requests
+
+PE_int = int('0x10001',16)
+PE_hex = '0x10001'
 #input : 
 # publickey_from : hex string, hex string 
 # publickey_to   : hex string, hex string
@@ -33,7 +37,7 @@ def mk_transaction_sign(transaction):
 	dict_ = OrderedDict()
 	dict_['type'] = "transaction_sign"
 	dict_['transaction'] = transaction
-	dict_['sign'] = sign(transaction['from'],hash(json.dumps(transaction)))
+	dict_['sign'] = sign(transaction['from'],hash_bitcoin(json.dumps(transaction)))
 	
 	
 
@@ -41,17 +45,19 @@ def mk_transaction_sign(transaction):
 
 #input : 
 # transactions : list of orderd dictionary transaction_sign
+# timestamp : time
 # reward : hex string
 # difficulty : hex string
-# nonce : string
+# nonce : string incoded by utf-8
 # parant : hex string without 0x
 #output: ordered dict
-def make_block(transactions,reward,difficulty,nonce,parent):
-	time = None
+def make_block(transactions,timestamp,reward,difficulty,nonce,parent):
 	dict_ = OrderedDict()
 	dict_['type'] = "block"
 	dict_['transaction'] = transactions
-	dict_['timestamp'] = time
+	dict_['timestamp'] = timestamp
+	dict_['reward'] = reward
+	dict_['difficulty'] = difficulty
 	dict_['nonce'] = nonce
 	dict_['parent'] = parent
 	#make_json_file(filename,dict_)
@@ -65,14 +71,34 @@ def make_block_hash(block):
 	dict_ = OrderedDict()
 	dict_['type'] = "block_hash"
 	dict_['block'] = json.dumps(block)
-	dict_['hash'] = hash(json.dumps(block))
+	dict_['hash'] = hash_bitcoin(json.dumps(block))
 	return dict_
 
-def verify_transaction():
+def verify_transaction(transaction):
+
 	return False
 
-def verify_block():
+#input : ordered dict
+#output : boolean
+def verify_block(block):
+	#hash(block) < target
+	difficulty = int(block['difficulty'],16)
+	target = pow(2,512-20-difficulty)
+	if (int(hash_bitcoin(json.dumps(block)),16) < target):
+		return True
 	return False
 
 def make_balance_json():
+	return 
+
+def get_p2p_msgs():
+	url = "https://gw.kaist.ac.kr/broadcast/get"
+	res = requests.get(url)
+	data = res.json()
+	for d in data:
+		d['block'] = json.loads(d['block'])
+	return data
+def post_p2p_msgs():
+	url = "https://gw.kaist.ac.kr/broadcast/post"
+
 	return 

@@ -36,7 +36,7 @@ def generateKey(keysize):
 #output : hex
 def sign(sk,msg):
 	#implement here
-	int_msg = int(hash(msg),16)
+	int_msg = int(hash_bitcoin(msg),16)
 
 	#msg to byte convert
 	
@@ -71,7 +71,7 @@ def verify(pk,msg,sig):
 
 # input : python string
 # output : hex string without 0x
-def hash(msg):
+def hash_bitcoin(msg):
 	msg = msg.encode()
 	m = hashlib.sha512()
 	m.update(msg)
