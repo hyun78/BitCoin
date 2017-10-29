@@ -36,17 +36,15 @@ def generateKey(keysize):
 #output : hex
 def sign(sk,msg):
 	#implement here
-	msg = msg.encode()
-	m = hashlib.sha512()
-	m.update(msg)
-	hashed_msg = m.digest()
+	int_msg = int(hash(msg),16)
 
 	#msg to byte convert
-	int_msg = int.from_bytes(hashed_msg,byteorder='big')
+	
 	d,N = int(sk[0],16),int(sk[1],16)
 	sig = pow(int_msg,d,N)
 
 	return hex(sig)
+
 #input  : (hex,hex),str,hex
 #output : Bool
 def verify(pk,msg,sig):
@@ -70,6 +68,17 @@ def verify(pk,msg,sig):
 		return True
 	else:
 		return False
+
+# input : python string
+# output : hex string without 0x
+def hash(msg):
+	msg = msg.encode()
+	m = hashlib.sha512()
+	m.update(msg)
+	hashed_msg = m.digest()
+	int_msg = int.from_bytes(hashed_msg,byteorder='big')
+	hex_msg = hex(int_msg)[2:]
+	return hex_msg
 
 #input  : str,hex,hex,hex
 #output ??
