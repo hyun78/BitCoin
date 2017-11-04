@@ -102,3 +102,21 @@ def post_p2p_msgs():
 	url = "https://gw.kaist.ac.kr/broadcast/post"
 
 	return 
+def auto_all(data):
+	for d in data:
+		h = d['hash']
+		h2 = hash_bitcoin(json.dumps(d['block']))
+		if h==h2 :
+			print("FIND!!")
+	return
+
+def auto_given(data):
+	i =0 
+	for d in data:
+		h = d['hash']
+		dif = int(d['block']['difficulty'],16)
+		t = pow(2,512-20-dif)
+		if (int(h,16) < t):
+			print(i)
+			i +=1
+	return
