@@ -96,8 +96,18 @@ def get_p2p_msgs():
 	res = requests.get(url)
 	data = res.json()
 	for d in data:
-		d['block'] = json.loads(d['block'])
+		key_list = list(d.keys())
+		if ('block' in key_list):
+			d['block'] = json.loads(d['block'])
+		if ('transaction' in key_list):
+			d['transaction'] = json.loads(d['transaction'])
 	return data
+def verify_block_2(block_struct):
+	difficulty = int(block_struct['block']['difficulty'],16)
+	target = pow(2,512-20-difficulty)
+	if (int(block['hash'],16) < target):
+		return True
+	return False
 def post_p2p_msgs():
 	url = "https://gw.kaist.ac.kr/broadcast/post"
 
