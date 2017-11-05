@@ -60,8 +60,8 @@ def verify(pk,msg,sig):
 	m = hashlib.sha512()
 	m.update(msg)
 	hashed_msg = m.digest()
-	print('decrypt_msg : ',decrypt_msg)
-	print('msg : ',msg.decode())
+	# print('decrypt_msg : ',decrypt_msg)
+	# print('msg : ',msg.decode())
 
 	#compare two
 	if (hashed_msg==decrypt_msg):
