@@ -138,6 +138,9 @@ def read_payload_json(filename):
 	pk = e,N
 	
 	return pk,msg,sig
+
+
+
 def mk_sign(transaction):
 	
 	sign_structure = {
