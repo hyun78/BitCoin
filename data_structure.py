@@ -434,10 +434,10 @@ class Block_chain():
 		
 		
 		return result
-	def get_longest(self,target_hash):
-		return self.head.longest_chain(target_hash)
-
-
+	def get_longest(self):
+		return self.head.longest_chain()
+	def get_target_hash(self,target_hash):
+		return self.head.get_target_hash(target_hash)
 class Block_node():
 	def __init__(self,block_hash,roots,depth):
 		
@@ -493,20 +493,18 @@ class Block_node():
 			return False
 		else:
 			return True
-	def longest_chain(self,target_hash):
+	def longest_chain(self):
 
 		if self.child==[]:
 			return self
 		else:
 			candidate = []
 			for cld in self.child:
-				candidate.append(cld.longest_chain(target_hash))
+				candidate.append(cld.longest_chain())
 			depth = self.depth
 			target = self
 			#print(self.depth)
 			for c in candidate:
-				if (c.hash == int(target_hash,16)):
-					return c
 				if depth<c.get_depth():
 					##print('candidate:',c.depth),
 					depth = c.get_depth()
@@ -514,17 +512,23 @@ class Block_node():
 			return target
 	def get_depth(self):
 		return self.depth
+	def get_target_hash(self,target_hash):
+		if self.hash==int(target_hash,16): #자기 자신인 경우 자신 리턴 
+			return (True,self)
+		for cld in self.child:  # 자신이 아닌 경우 차일드중에서 찾아서 리턴 
+			tup = cld.get_target_hash(target_hash)
+			if tup[0]:
+				return (True,tup[1])
+		tup = (False,self.longest_chain()) #어디서도 찾을 수 없다면 그냥 longest chain을 리턴 
+		return tup
 import sys
 def main_routine(target_hash):
 	data = get_p2p_msgs()
 	chain_tree = Block_chain(data[0])
-	for d in data[1:700]:
+	for d in data[1:]:
 		res = chain_tree.add(d)
-	t = chain_tree.get_longest(target_hash)
-	print(t.depth)
-	print(t.roots)
-	#print_json_output(chain_tree.get_longest(target_hash).roots)
-	return		
+	print_json_output(chain_tree.get_target_hash(target_hash)[1].roots)
+	return chain_tree	
 
 if __name__=="__main__":
 	# print(sys.argv)
