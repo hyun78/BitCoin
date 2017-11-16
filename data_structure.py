@@ -6,6 +6,7 @@ import json
 from collections import OrderedDict
 from digital_signature import *
 
+import time
 import requests
 import dateutil.parser
 import urllib.request
@@ -21,7 +22,7 @@ AMOUNT_REWARD = 1000
 # time           : UCT time in ISO 8601 format
 # parent         : hex string
 #output: ordered dict
-VERBOSE_FLAG = False
+VERBOSE_FLAG = True
 def verbose_print(*args):
 	if VERBOSE_FLAG:
 		for arg in args:
@@ -188,13 +189,18 @@ def verify_transaction_signature_format(txn_sig_obj):
 
 # input : string 
 # output : boolean
-def verify_block_format(block):
+def verify_block_format(block_given):
 	#1 block type check
 	try:
-		block = json.loads(block)
+		
+		block = json.loads(block_given)
+		
 	except:
-		verbose_print("block loads failed")
-		return False
+		if type(json.loads(block_given))!=type(dict()):
+
+			verbose_print("block loads failed",block_given,type(block_given),json.loads(block_given),type(json.loads(block_given)),type(dict())==json.loads(block_given))
+			return False
+		block = json.loads(block_given)
 	if type(dict())!=type(block):
 		verbose_print("type check failed")
 		return False
@@ -301,16 +307,27 @@ def is_hex_type(cmp_str):
 		return False
 	return False
 def get_p2p_msgs():
+	data_total = []
 	url = "https://gw.kaist.ac.kr/broadcast/get"
-	res = requests.get(url)
+	start_at = 1
+	param = {'start_at':start_at}
+	res = requests.get(url,params=param)
 	data = res.json()
+	data_total += data
+	while (data!=[]):
+		start_at += len(data)
+		param = {'start_at':start_at}
+		res = requests.get(url,params=param)
+		data = res.json()
+		data_total += data
+			
 	# for d in data:
 	# 	key_list = list(d.keys())
 	# 	if ('block' in key_list):
 	# 		d['block'] = json.loads(d['block'])
 	# 	if ('transaction' in key_list):
 	# 		d['transaction'] = json.loads(d['transaction'])
-	return data
+	return data_total
 
 #input : block_hash_structure
 #output : bool
@@ -423,36 +440,91 @@ def print_json_output(orderd_dict):
 
 class Block_chain():
 	def __init__(self,head_block_hash):
-		self.head = Block_node(head_block_hash,{},0)
-		
+		self.head = Block_node(head_block_hash,{},0,None)		
 		self.roots = {}
+		self.chains = []
+		self.chains.append([self.head]) #first chain added
 		return
 	def add(self,block_hash):
 		#find corresponding parent
-		#head노드중 차일드를 찾아서..
-		result = self.head.add_child(block_hash)
-		
-		
-		return result
+		#head노드중 차일드를 찾아서.. 가 아니라.. 체인중에 가능한 친구가 있는지 보자.
+		chain_idx = 0
+		block_idx = 0
+		find_flag = False
+		target = None
+		try:
+			parent_hash = int(json.loads(block_hash['block'])['parent'],16)
+		except:
+			return False
+
+		for i in range(len(self.chains)):
+			for j in range(len(self.chains[i])):
+				block = self.chains[i][j]
+				#부모 찾기
+				if block.is_parent(parent_hash):
+					new_roots = copy.deepcopy(block.roots)
+					child_node = Block_node(block_hash,new_roots,block.depth,block)
+					if not (child_node.format_validity):
+						continue
+					chain_idx = i
+					block_idx = j
+					find_flag = True
+					target = child_node
+					break
+			if find_flag==True:
+				break
+		if find_flag and target.format_validity:
+			#마지막에 붙는 것인가? 
+			if j == len(self.chains[i])-1:
+				self.chains[i].append(target)
+			else: #브랜치가 생기는가?
+				branch = self.chains[i][:(j+1)]
+				branch.append(target)
+				self.chains.append(branch)
+		else:
+			return False
+		return True
 	def get_longest(self):
-		return self.head.longest_chain()
+
+		l_list = [len(chain) for chain in self.chains]
+		max_l = max(l_list)
+		idx = l_list.index(max_l)
+		res =self.chains[idx][:]
+
+		return res
 	def get_target_hash(self,target_hash):
-		return self.head.get_target_hash(target_hash)
+		chain = self.get_longest()
+		idx = 0
+		find_flag = False
+		for i in range(len(chain)):
+			block = chain[i]
+			if block.hash==int(target_hash,16):
+				find_flag = True
+				idx = i
+				break;
+		if find_flag:
+			return chain[:idx][:]
+		else:
+			return chain[:]
+		
 class Block_node():
-	def __init__(self,block_hash,roots,depth):
+	def __init__(self,block_hash,roots,depth,parent_ptr):
 		
 		try:
 			self.block_hash = block_hash.copy()
 			self.roots = copy.deepcopy(roots)
-			self.child = []
 			self.depth = depth+1
+			self.parent_ptr = parent_ptr
+
 			roots_new = verify_block(self.block_hash,self.roots)
 			if (roots_new):
 				self.hash = int(block_hash['hash'],16)
 				self.parent = int(json.loads(block_hash['block'])['parent'],16)
 				self.format_validity = True
 				self.roots = roots_new
-
+				self.dif = int(json.loads(self.block_hash['block'])['difficulty'],16)
+				if not (self.verify_difficulty()):
+					raise ValueError('verify_block failed')
 			else:
 				try:
 					self.hash = int(block_hash['hash'],16)
@@ -463,71 +535,69 @@ class Block_node():
 		except:
 			self.format_validity = False
 		return
-	def add_child(self,child):
-		t = False
-		if (self.format_validity == False):
-			return False
-		new_roots = copy.deepcopy(self.roots)
-		child_node = Block_node(child,new_roots,self.depth)
-		if self.is_parent(child_node): # 내가 너의 부모인가?
-			verbose_print("i am ur parent",self.roots,child_node.roots)
-			self.child.append(child_node)
-			t = True
-		else:
-			cld = self.child
-			for leaf in cld:	#내 자식들중에 너의 부모가 있니?
-				res = leaf.add_child(child)
-				if (res==True):
-					verbose_print("added to child",leaf.roots,leaf.depth)
-				t = False
-			
-			
-		return t
-	def is_parent(self,child):
+	
+	def is_parent(self,parent_hash):
 		#is self the parent of child?
-		if (child.format_validity and self.format_validity and (child.parent == self.hash) ):
+		if (parent_hash	 == self.hash) :
 			return True
 		return False
-	def has_child(self):
-		if len(self.child)<=0:
-			return False
-		else:
-			return True
-	def longest_chain(self):
-
-		if self.child==[]:
-			return self
-		else:
-			candidate = []
-			for cld in self.child:
-				candidate.append(cld.longest_chain())
-			depth = self.depth
-			target = self
-			#print(self.depth)
-			for c in candidate:
-				if depth<c.get_depth():
-					##print('candidate:',c.depth),
-					depth = c.get_depth()
-					target = c
-			return target
 	def get_depth(self):
 		return self.depth
-	def get_target_hash(self,target_hash):
-		if self.hash==int(target_hash,16): #자기 자신인 경우 자신 리턴 
-			return (True,self)
-		for cld in self.child:  # 자신이 아닌 경우 차일드중에서 찾아서 리턴 
-			tup = cld.get_target_hash(target_hash)
-			if tup[0]:
-				return (True,tup[1])
-		tup = (False,self.longest_chain()) #어디서도 찾을 수 없다면 그냥 longest chain을 리턴 
-		return tup
+	def verify_difficulty(self):
+		if self.depth<= 10 :
+			if self.dif!=0: #initial dif
+				return False
+			return True
+		else:
+			n = self.depth%10
+			ten_before = self.go_up_n(10)
+			dif_before = ten_before.dif #10n + 1th block
+			if n==0:
+				n = 10
+			start_node = self.go_up_n(n-1)
+			dif_start = start_node.dif
+			dif_now = self.dif
+			if n!=1: #no need to update
+				if dif_now==dif_start:
+					return True
+				else:
+					return False
+			one_before = self.go_up_n(1)
+			
+			t1 = dateutil.parser.parse(json.loads(ten_before.block_hash['block'])['timestamp'])
+			t2 = dateutil.parser.parse(json.loads(one_before.block_hash['block'])['timestamp'])
+			third_minute = dateutil.parser.relativedelta.datetime.timedelta(minutes=30)
+			two_hour = dateutil.parser.relativedelta.datetime.timedelta(hours=2)
+			
+			
+			if t2-t1< third_minute:	 #increase case
+				if dif_now== dif_before+1:
+					return True
+			elif t2-t1 > two_hour: # decrease case
+				if dif_now == dif_before-1:
+					return True
+			else: # maintain case
+				print(self.dif,self.go_up_n(1).dif,self.go_up_n(2).dif,self.go_up_n(3).dif,self.go_up_n(4).dif,self.go_up_n(5).dif,self.go_up_n(6).dif,self.go_up_n(7).dif,self.go_up_n(8).dif,self.go_up_n(9).dif,dif_before,self.depth)
+				print(t2-t1)
+				if dif_now==dif_before:
+					return True
+			print("not any case?",dif_now,dif_before,ten_Before.depth,self.depth)
+			return False
+		return False
+	def go_up_n(self,n):
+		if n<0:
+			return False
+		if n==0:
+			return self
+		else:
+			return self.parent_ptr.go_up_n(n-1)
 import sys
 def main_routine(target_hash):
 	data = get_p2p_msgs()
 	chain_tree = Block_chain(data[0])
 	for d in data[1:]:
 		res = chain_tree.add(d)
-	print_json_output(chain_tree.get_target_hash(target_hash)[1].roots)
+	print_json_output(chain_tree.get_target_hash(target_hash)[-1].roots)
 	return chain_tree	
 
 if __name__=="__main__":
