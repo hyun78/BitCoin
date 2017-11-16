@@ -27,11 +27,32 @@ def routine():
 def generateKey(keysize):
 	#implement here
 	key = RSA.generate(keysize, random_generator)
-	pk = (hex(key.e),hex(key.n))
-	sk = (hex(key.d),hex(key.n))
+	pk = (hex(key.e)[2:],hex(key.n)[2:])
+	sk = (hex(key.d)[2:],hex(key.n)[2:])
 
 	return (pk,sk)
-
+def pksk_save(filename,pksk):
+	f = open(filename,'w')
+	f.write(pksk[0][0])
+	f.write('\n')
+	f.write(pksk[0][1])
+	f.write('\n')
+	f.write(pksk[1][0])
+	f.write('\n')
+	f.write(pksk[1][1])
+	f.close()
+	return
+def pksk_read(filename):
+	f = open(filename,'r')
+	e = f.readline()[:-1]
+	n = f.readline()[:-1]
+	d = f.readline()[:-1]
+	n = f.readline()
+	pk = (e,n)
+	sk = (d,n)
+	return (pk,sk)
+def get_modulus(keys):
+	return keys[0][1]
 #input  : (hex,hex),str
 #output : hex
 def sign(sk,msg):

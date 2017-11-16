@@ -426,7 +426,7 @@ def post_p2p_msgs(json_dict):
 	req = urllib.request.Request(url)
 	req.add_header('Content-Type', 'application/json')
 	data = urllib.request.urlopen(req,json.dumps(json_dict).encode()).read().decode() #UTF-8 encode
-	
+	print("successfuly posted")
 	return 
 
 
