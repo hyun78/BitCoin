@@ -41,8 +41,8 @@ def mining(reward,difficulty,parent,transactions):
 			time_now = datetime.utcnow().isoformat()
 	block_hash = {
 		"type":"block_hash",
-		"block":json.dumps(block).encode(),
-		"hash": hash_cal.zfill(128)
+		"block":json.dumps(block),
+		"hash": hex(hash_cal)[2:].zfill(128)
 	}
 
 	return block_hash
@@ -75,7 +75,7 @@ def mine_only():
 	parent_block_hash_value = hex(main_chain[-1].hash)[2:].zfill(128)
 	keys = pksk_read('pksk')
 	dif = hex(next_dif(main_chain))[2:]
-	print("current difficulty : ",dif)
+	print("current difficulty : ",dif,main_chain[-1].depth)
 	txns = []
 	block_new = mining(get_modulus(keys),dif,parent_block_hash_value,txns)	
 	post_p2p_msgs(block_new)
