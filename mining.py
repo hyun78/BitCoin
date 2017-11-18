@@ -2,12 +2,15 @@ from digital_signature import *
 from data_structure import *
 from datetime import datetime
 import base36
+import random
 #input : base 36 string
 #output : incremented base 36 string
 def stream_increment(input_str):
 	int_str = base36.loads(input_str)
 	int_str +=1
 	incr_str = base36.dumps(int_str)
+	if (random.randint(0,10000)>9999):
+		print(incr_str)
 	return incr_str
 
 #input : reward(public key) , difficulty( hex),parent(hex string fixed size 18bit), transactions( list of valid transaction sig)
