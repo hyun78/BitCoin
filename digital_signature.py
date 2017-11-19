@@ -53,6 +53,8 @@ def pksk_read(filename):
 	return (pk,sk)
 def get_modulus(keys):
 	return keys[0][1]
+def get_secret_key_from(keys):
+	return keys[1]
 #input  : (hex,hex),str
 #output : hex
 def sign(sk,msg):

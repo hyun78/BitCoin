@@ -22,7 +22,7 @@ AMOUNT_REWARD = 1000
 # time           : UCT time in ISO 8601 format
 # parent         : hex string
 #output: ordered dict
-VERBOSE_FLAG = True
+VERBOSE_FLAG = False
 def verbose_print(*args):
 	if VERBOSE_FLAG:
 		for arg in args:
@@ -577,11 +577,11 @@ class Block_node():
 				if dif_now == dif_before-1:
 					return True
 			else: # maintain case
-				print(self.dif,self.go_up_n(1).dif,self.go_up_n(2).dif,self.go_up_n(3).dif,self.go_up_n(4).dif,self.go_up_n(5).dif,self.go_up_n(6).dif,self.go_up_n(7).dif,self.go_up_n(8).dif,self.go_up_n(9).dif,dif_before,self.depth)
-				print(t2-t1)
+				#print(self.dif,self.go_up_n(1).dif,self.go_up_n(2).dif,self.go_up_n(3).dif,self.go_up_n(4).dif,self.go_up_n(5).dif,self.go_up_n(6).dif,self.go_up_n(7).dif,self.go_up_n(8).dif,self.go_up_n(9).dif,dif_before,self.depth)
+				#print(t2-t1)
 				if dif_now==dif_before:
 					return True
-			print("not any case?",dif_now,dif_before,ten_Before.depth,self.depth)
+			#print("not any case?",dif_now,dif_before,ten_Before.depth,self.depth)
 			return False
 		return False
 	def go_up_n(self,n):
