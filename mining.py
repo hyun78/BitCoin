@@ -115,17 +115,20 @@ def send_my_money_to_get_grade():
 	t = main_routine('11111111111')
 	main_chain = t.get_longest()
 	parent_block_hash_value = hex(main_chain[-1].hash)[2:].zfill(128)
-	keys = pksk_read('pksk')
+	keys = pksk_read('pksk_2000')
 	dif = next_dif(main_chain)
 	roots = main_chain[-1].roots
 	amt = roots[get_modulus(keys)]
 	#keys_grade = pksk_read('grade_key')
+	key_file = open('20140708.pub','r')
+	keys_grade = key_file.readline()
+	key_file.close()
 	print("owner : ",get_modulus(keys),"\n amout : ",amt)
 	if amt<=50:
 		print("not enough amount")
 		return False
-	txn = (make_transaction_hash(get_modulus(keys),keys_grade(),hex(amt-50)[2:],parent_block_hash_value),get_secret_key_from(keys))
-	block_new = mining(get_modulus(keys),dif,parent_block_hash_value,[txn])
+	txn = (make_transaction_hash(get_modulus(keys),keys_grade,hex(amt-50)[2:],parent_block_hash_value,get_secret_key_from(keys)))
+	block_new = mining(get_modulus(keys),hex(dif)[2:],parent_block_hash_value,[txn])
 	post_p2p_msgs(block_new)
 	return True
 def post_txns_2000():
@@ -143,7 +146,7 @@ def post_txns_2000():
 	if amt<=50:
 		print("not enough amount")
 		return False
-	txn = (make_transaction_hash(get_modulus(keys),keys_grade,hex(1)[2:],parent_block_hash_value,get_secret_key_from(keys) ))
+	txn = (make_transaction_hash(get_modulus(keys),keys_grade,hex(amt-50)[2:],parent_block_hash_value,get_secret_key_from(keys) ))
 	post_p2p_msgs(txn)
 	
 	return True
