@@ -19,7 +19,7 @@ def generate_block_string_with_nonce(block_str,nonce):
 	try:
 		st3 = '{}"nonce": "{}",{}'.format(st1[0][:-1],nonce,st1[1].split(',')[1])
 	except:
-		st3 = '{}"nonce": "{}",{}'.format(st1[0][:-1],nonce,st1[1])
+		st3 = '{}"nonce": "{}",{}}'.format(st1[0][:-1],nonce,st1[1])
 	return st3
 
 def test_new(block_hash):
